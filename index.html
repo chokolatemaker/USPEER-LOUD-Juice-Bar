@@ -1,4 +1,4 @@
-<!-- LOUD JUICE BAR sensor prototype v0.5.0 | 2026-10-06 -->
+<!-- LOUD JUICE BAR sensor prototype v0.5.1 | 2026-10-06 -->
 <!doctype html>
 <html lang="ko">
 <head>
@@ -13,7 +13,7 @@
     .row { display:flex; gap:10px; } button { border:0; border-radius:12px; padding:13px 15px; background:var(--lime); color:#17200b; font-weight:800; font-size:15px; cursor:pointer; touch-action:manipulation; } button.secondary { background:#374151; color:white; } button:disabled { opacity:.5; }
     .status { margin:12px 0; border:1px solid #374151; border-radius:12px; padding:10px 12px; color:#d1d5db; font-size:13px; min-height:42px; }
     .stage { min-height:320px; display:grid; place-items:center; position:relative; overflow:hidden; border-radius:20px; background:linear-gradient(#1b2638,#101722); }
-    .readouts { position:absolute; inset:12px 14px auto; display:flex; justify-content:space-between; z-index:2; color:#cbd5e1; font-size:12px; font-variant-numeric:tabular-nums; }
+    .readouts { position:absolute; inset:12px 14px auto; display:flex; justify-content:space-between; z-index:2; color:#cbd5e1; font-size:12px; }
     .shaker { width:156px; height:244px; position:relative; filter:drop-shadow(0 14px 18px #0008); }
     .lid { position:absolute; top:0; left:27px; width:102px; height:21px; border:2px solid #dbeafe88; border-radius:9px 9px 4px 4px; background:#94a3b855; z-index:3; }
     .jar { position:absolute; inset:16px 11px 3px; overflow:hidden; border:3px solid #dbeafe9c; border-top:1px solid #dbeafe55; border-radius:15px 15px 34px 34px; background:linear-gradient(90deg,#ffffff17,#ffffff06 35%,#ffffff12 75%,#ffffff25); }
@@ -31,7 +31,7 @@
 </head>
 <body>
 <main>
-  <h1>LOUD JUICE BAR</h1><p class="sub">센서 프로토타입 v0.5.0 · 전축 SHAKE / 액체 반응</p>
+  <h1>LOUD JUICE BAR</h1><p class="sub">센서 프로토타입 v0.5.1 · 전축 SHAKE / 액체 반응</p>
   <div class="row"><button id="start">센서 시작</button><button id="reset" class="secondary">RESET</button></div>
   <div id="status" class="status">센서 시작을 눌러 모션 권한을 허용하세요. HTTPS 페이지에서만 센서가 동작합니다.</div>
   <section class="stage" aria-label="흔들림 및 액체 미리보기">
@@ -53,17 +53,17 @@
 <script>
 (() => {
   const $ = id => document.getElementById(id);
-  const start=$('start'), reset=$('reset'), status=$('status'), juice=$('juice'), shaker=$('shaker');
+  const start=$('start'), reset=$('reset'), status=$('status'), juice=$('juice');
   let count=0, enabled=false, haptics=true;
   let lastCountAt=0,lastPeak=0,lastEventAt=0,lastMotionAt=0,sampleIntervals=[];
-  let gravity={x:0,y:0,z:0},gravityReady=false,cycleDirection=0,cyclePhase=0,cycleStartedAt=0,axisArmed=true;
+  let gravity={x:0,y:0,z:0},gravityReady=false,impactArmed=true,pendingPeakAt=0;
   let lastUi=0,logLines=[];
   const cfg={threshold:+$('threshold').value,cooldown:+$('cooldown').value};
   function say(text){ status.textContent=text; }
   function log(text){ logLines.unshift(new Date().toLocaleTimeString()+"  "+text); logLines=logLines.slice(0,7); $('log').textContent=logLines.join('\n'); }
   function haptic(pattern){ if(haptics && navigator.vibrate) navigator.vibrate(pattern); }
   function setCount(n){count=n;$('count').textContent=n;}
-  function resetAll(){setCount(0);lastCountAt=0;lastPeak=0;lastMotionAt=0;sampleIntervals=[];gravityReady=false;cycleDirection=0;cyclePhase=0;cycleStartedAt=0;axisArmed=true;lastEventAt=0;juice.style.setProperty('--slosh-x','0px');juice.style.setProperty('--slosh-r','0deg');$('mode').textContent=enabled?'READY':'OFFLINE';log('RESET');}
+  function resetAll(){setCount(0);lastCountAt=0;lastPeak=0;lastMotionAt=0;sampleIntervals=[];gravityReady=false;impactArmed=true;pendingPeakAt=0;lastEventAt=0;juice.style.setProperty('--slosh-x','0px');juice.style.setProperty('--slosh-r','0deg');$('mode').textContent=enabled?'READY':'OFFLINE';log('RESET');}
   function onMotion(e){
     const ag=e.accelerationIncludingGravity, linear=e.acceleration;
     if(!ag && !linear)return;
@@ -79,26 +79,20 @@
     }else return;
     // Combine all three linear acceleration axes so any natural shake direction counts.
     const magnitude=Math.hypot(ax,ay,az);
-    const directionAxis=Math.abs(ax)>=Math.abs(ay)&&Math.abs(ax)>=Math.abs(az)?ax:(Math.abs(ay)>=Math.abs(az)?ay:az);
     if(lastMotionAt){sampleIntervals.push(now-lastMotionAt);sampleIntervals=sampleIntervals.slice(-12);}
     lastMotionAt=now;lastEventAt=now;lastPeak=Math.max(magnitude,lastPeak*.9);
-    if(cycleDirection && now-cycleStartedAt>1200){cycleDirection=0;cyclePhase=0;cycleStartedAt=0;}
-    if(magnitude<cfg.threshold*.4)axisArmed=true;
-    if(axisArmed && magnitude>=cfg.threshold){
-      axisArmed=false;
-      const direction=Math.sign(directionAxis);
-      if(direction && !cycleDirection){cycleDirection=direction;cyclePhase=1;cycleStartedAt=now;}
-      else if(direction && now-cycleStartedAt>=150 && now-cycleStartedAt<=1200){
-        if(cyclePhase===1 && direction===-cycleDirection)cyclePhase=2;
-        else if(cyclePhase===2 && direction===cycleDirection){
-          if(!lastCountAt || now-lastCountAt>=cfg.cooldown){setCount(count+1);$('mode').textContent='SHAKE';lastCountAt=now;haptic(18);log(`SHAKE ${count} · 왕복 ${magnitude.toFixed(1)} m/s²`);}
-          cycleDirection=0;cyclePhase=0;cycleStartedAt=0;
-        }
-      }
+    if(pendingPeakAt && now-pendingPeakAt>1000)pendingPeakAt=0;
+    if(magnitude<cfg.threshold*.4)impactArmed=true;
+    if(impactArmed && magnitude>=cfg.threshold){
+      impactArmed=false;
+      if(pendingPeakAt && now-pendingPeakAt>=120 && now-pendingPeakAt<=1000){
+        if(!lastCountAt || now-lastCountAt>=cfg.cooldown){setCount(count+1);$('mode').textContent='SHAKE';lastCountAt=now;haptic(18);log(`SHAKE ${count} · 두 번째 피크 ${magnitude.toFixed(1)} m/s²`);}
+        pendingPeakAt=0;
+      }else pendingPeakAt=now;
     }
-    const visual=Math.max(-12,Math.min(12,-ax*.8));
+    const visual=Math.max(-12,Math.min(12,-ax*1.2));
     juice.style.setProperty('--slosh-x',visual.toFixed(1)+'px');
-    juice.style.setProperty('--slosh-r',Math.max(-9,Math.min(9,-directionAxis*.35)).toFixed(1)+'deg');
+    juice.style.setProperty('--slosh-r',Math.max(-9,Math.min(9,(-ay-az)*.3)).toFixed(1)+'deg');
   }
   async function requestSensors(){
     try{
