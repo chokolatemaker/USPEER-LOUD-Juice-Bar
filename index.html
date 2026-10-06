@@ -1,8 +1,4 @@
-10s 동안 처리함
-
-좋아. **감지 기준을 16에서 11로 낮춘 v0.5.3**야. 다른 판정 로직은 그대로 뒀고, 아래 HTML 전체를 복붙하면 돼.
-
-<!-- LOUD JUICE BAR sensor prototype v0.5.3 | 2026-10-07 -->
+<!-- LOUD JUICE BAR sensor prototype v0.6.0 | 2026-10-07 -->
 <!doctype html>
 <html lang="ko">
 <head>
@@ -22,9 +18,15 @@
     .lid { position:absolute; top:0; left:27px; width:102px; height:21px; border:2px solid #dbeafe88; border-radius:9px 9px 4px 4px; background:#94a3b855; z-index:3; }
     .jar { position:absolute; inset:16px 11px 3px; overflow:hidden; border:3px solid #dbeafe9c; border-top:1px solid #dbeafe55; border-radius:15px 15px 34px 34px; background:linear-gradient(90deg,#ffffff17,#ffffff06 35%,#ffffff12 75%,#ffffff25); }
     .jar:before,.jar:after { content:""; position:absolute; z-index:2; top:18px; bottom:20px; width:5px; border-radius:8px; background:#fff2; } .jar:before{left:12px}.jar:after{right:12px;width:3px;background:#fff3}
-    .juice { position:absolute; left:-16%; right:-16%; bottom:0; height:70%; overflow:hidden; background:linear-gradient(180deg,#7dd3fcdd,#0ea5e9ed 38%,#075985ed); border-top:3px solid #bae6fd; border-radius:48% 48% 0 0 / 9% 9% 0 0; transform:translateX(var(--slosh-x,0px)) rotate(var(--slosh-r,0deg)); transform-origin:50% 100%; transition:height .2s ease-out,transform .1s ease-out; }
-    .juice:before { content:""; position:absolute; left:-10%; top:-13px; width:120%; height:26px; border-radius:50%; background:#e0f2fea8; }
-    .bubbles { position:absolute; inset:0; opacity:.55; background:radial-gradient(circle at 28% 68%,#fff9 0 2px,transparent 3px),radial-gradient(circle at 72% 49%,#fff8 0 3px,transparent 4px),radial-gradient(circle at 48% 82%,#fff8 0 2px,transparent 3px); }
+    .juice { position:absolute; left:-16%; right:-16%; bottom:0; height:70%; overflow:hidden; border-top:3px solid #f8fafc; border-radius:48% 48% 0 0 / 9% 9% 0 0; transform:translateX(var(--slosh-x,0px)) rotate(var(--slosh-r,0deg)); transform-origin:50% 100%; transition:transform .1s ease-out; }
+    .layer { position:absolute; left:-4%; right:-4%; height:20%; border-radius:50% 50% 0 0 / 12% 12% 0 0; transform:translateX(var(--layer-x,0px)) rotate(var(--layer-r,0deg)); transition:filter .35s ease,background-color .35s ease; }
+    .layer:nth-child(1) { bottom:80%; background:#ef4444; }
+    .layer:nth-child(2) { bottom:60%; background:#f97316; }
+    .layer:nth-child(3) { bottom:40%; background:#dc2626; }
+    .layer:nth-child(4) { bottom:20%; background:#22c55e; }
+    .layer:nth-child(5) { bottom:0; background:#f8fafc; }
+    .juice.mixing .layer { filter:blur(var(--mix-blur,0px)); }
+    .juice:after { content:""; position:absolute; left:-10%; top:-13px; width:120%; height:26px; border-radius:50%; background:#ffffffa8; }
     .big { text-align:center; } .big .label { color:var(--muted); font-size:12px; letter-spacing:.14em; } .count { font-size:54px; font-weight:900; line-height:1.05; font-variant-numeric:tabular-nums; } .count small { font-size:15px; color:#cbd5e1; letter-spacing:.08em; }
     .metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; } .metric { padding:10px; border-radius:12px; background:#ffffff0b; text-align:center; } .metric span { display:block; color:var(--muted); font-size:11px; } .metric b { font-size:14px; font-variant-numeric:tabular-nums; }
     details { margin-top:13px; background:#ffffff08; border-radius:12px; padding:11px 13px; } summary { cursor:pointer; font-weight:700; font-size:14px; } .controls { display:grid; grid-template-columns:1fr auto; gap:9px 12px; align-items:center; margin-top:12px; font-size:13px; color:#d1d5db; } input[type=range] { width:100%; accent-color:var(--lime); } output { min-width:47px; text-align:right; color:var(--lime); font-variant-numeric:tabular-nums; }
@@ -35,12 +37,12 @@
 </head>
 <body>
 <main>
-  <h1>LOUD JUICE BAR</h1><p class="sub">센서 프로토타입 v0.5.3 · 전축 SHAKE / 액체 반응</p>
+  <h1>LOUD JUICE BAR</h1><p class="sub">센서 프로토타입 v0.6.0 · 전축 SHAKE / 5층 액체</p>
   <div class="row"><button id="start">센서 시작</button><button id="reset" class="secondary">RESET</button></div>
   <div id="status" class="status">센서 시작을 눌러 모션 권한을 허용하세요. HTTPS 페이지에서만 센서가 동작합니다.</div>
   <section class="stage" aria-label="흔들림 및 액체 미리보기">
     <div class="readouts"><span id="mode">READY</span><span>전축 모션 감지</span></div>
-    <div class="shaker" id="shaker"><div class="lid"></div><div class="jar"><div class="juice" id="juice"><div class="bubbles"></div></div></div></div>
+    <div class="shaker" id="shaker"><div class="lid"></div><div class="jar"><div class="juice" id="juice"><div class="layer"></div><div class="layer"></div><div class="layer"></div><div class="layer"></div><div class="layer"></div></div></div></div>
     <div class="big"><div class="label">SHAKE</div><div class="count"><span id="count">0</span> <small>회</small></div></div>
   </section>
   <div class="metrics"><div class="metric"><span>감지 가속도</span><b id="peakRead">0.0 m/s²</b></div><div class="metric"><span>센서 주기</span><b id="rateRead">—</b></div><div class="metric"><span>감지 기준</span><b>피크 1회 = +1</b></div></div>
@@ -51,7 +53,7 @@
     </div>
   </details>
   <div class="row" style="margin-top:12px"><button id="sound" class="secondary">진동: 켬</button></div>
-  <p class="hint">폰을 편한 방향으로 흔들어 보세요. X·Y·Z 합산 가속도가 설정값을 넘는 피크마다 1회 셉니다. 다음 피크를 세려면 움직임이 잠깐 잦아들어야 합니다. 가만히 들고 있을 때의 중력은 계산에서 뺍니다.</p>
+  <p class="hint">빨강·주황·빨강·초록·흰색 5개 재료 층으로 시작합니다. 폰을 흔들면 액체가 찰랑이고, SHAKE 카운트에 따라 층이 조금씩 섞입니다.</p>
   <pre class="log" id="log">센서 로그가 여기에 표시됩니다.</pre>
 </main>
 <script>
@@ -67,7 +69,7 @@
   function log(text){ logLines.unshift(new Date().toLocaleTimeString()+"  "+text); logLines=logLines.slice(0,7); $('log').textContent=logLines.join('\n'); }
   function haptic(pattern){ if(haptics && navigator.vibrate) navigator.vibrate(pattern); }
   function setCount(n){count=n;$('count').textContent=n;}
-  function resetAll(){setCount(0);lastCountAt=0;lastPeak=0;lastMotionAt=0;sampleIntervals=[];gravityReady=false;impactArmed=true;lastEventAt=0;juice.style.setProperty('--slosh-x','0px');juice.style.setProperty('--slosh-r','0deg');$('mode').textContent=enabled?'READY':'OFFLINE';log('RESET');}
+  function resetAll(){setCount(0);lastCountAt=0;lastPeak=0;lastMotionAt=0;sampleIntervals=[];gravityReady=false;impactArmed=true;lastEventAt=0;juice.classList.remove('mixing');juice.style.setProperty('--mix-blur','0px');juice.style.setProperty('--slosh-x','0px');juice.style.setProperty('--slosh-r','0deg');for(let i=0;i<5;i++){juice.children[i].style.setProperty('--layer-x','0px');juice.children[i].style.setProperty('--layer-r','0deg');} $('mode').textContent=enabled?'READY':'OFFLINE';log('RESET');}
   function onMotion(e){
     const ag=e.accelerationIncludingGravity, linear=e.acceleration;
     if(!ag && !linear)return;
@@ -88,11 +90,17 @@
     if(magnitude<cfg.threshold*.55)impactArmed=true;
     if(impactArmed && magnitude>=cfg.threshold){
       impactArmed=false;
-      if(!lastCountAt || now-lastCountAt>=cfg.cooldown){setCount(count+1);$('mode').textContent='SHAKE';lastCountAt=now;haptic(18);log(`SHAKE ${count} · 피크 ${magnitude.toFixed(1)} m/s²`);}
+      if(!lastCountAt || now-lastCountAt>=cfg.cooldown){setCount(count+1);$('mode').textContent='SHAKE';lastCountAt=now;haptic(18);const mix=Math.min(1,count/30);juice.classList.toggle('mixing',mix>0);juice.style.setProperty('--mix-blur',(mix*3).toFixed(1)+'px');log(`SHAKE ${count} · 피크 ${magnitude.toFixed(1)} m/s²`);}
     }
-    const visual=Math.max(-12,Math.min(12,-ax*1.2));
-    juice.style.setProperty('--slosh-x',visual.toFixed(1)+'px');
-    juice.style.setProperty('--slosh-r',Math.max(-9,Math.min(9,(-ay-az)*.3)).toFixed(1)+'deg');
+    const visualX=Math.max(-14,Math.min(14,-ax*1.4));
+    const visualR=Math.max(-10,Math.min(10,(-ay-az)*.34));
+    juice.style.setProperty('--slosh-x',visualX.toFixed(1)+'px');
+    juice.style.setProperty('--slosh-r',visualR.toFixed(1)+'deg');
+    for(let i=0;i<5;i++){
+      const phase=i%2===0?1:-1;
+      juice.children[i].style.setProperty('--layer-x',(visualX*phase*.48).toFixed(1)+'px');
+      juice.children[i].style.setProperty('--layer-r',(visualR*phase*.65).toFixed(1)+'deg');
+    }
   }
   async function requestSensors(){
     try{
@@ -111,7 +119,7 @@
     ['threshold','threshold','thresholdOut',v=>Number(v).toFixed(1)],['cooldown','cooldown','cooldownOut',v=>v+' ms']
   ]) $(id).addEventListener('input',e=>{cfg[key]=+e.target.value;$(out).textContent=format(e.target.value);});
   function frame(now){
-    if(now-lastEventAt>130){juice.style.setProperty('--slosh-x','0px');juice.style.setProperty('--slosh-r','0deg');}
+    if(now-lastEventAt>130){juice.style.setProperty('--slosh-x','0px');juice.style.setProperty('--slosh-r','0deg');for(let i=0;i<5;i++){juice.children[i].style.setProperty('--layer-x','0px');juice.children[i].style.setProperty('--layer-r','0deg');}}
     if(now-lastUi>250){$('peakRead').textContent=lastPeak.toFixed(1)+' m/s²';lastPeak*=.65;
       if(sampleIntervals.length){const avg=sampleIntervals.reduce((a,b)=>a+b,0)/sampleIntervals.length;$('rateRead').textContent=Math.round(1000/avg)+' Hz';}lastUi=now;}
     requestAnimationFrame(frame);
