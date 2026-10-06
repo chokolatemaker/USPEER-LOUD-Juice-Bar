@@ -1,4 +1,4 @@
-<!-- LOUD JUICE BAR sensor prototype v0.4.0 | 2026-10-06 -->
+<!-- LOUD JUICE BAR sensor prototype v0.5.0 | 2026-10-06 -->
 <!doctype html>
 <html lang="ko">
 <head>
@@ -31,23 +31,23 @@
 </head>
 <body>
 <main>
-  <h1>LOUD JUICE BAR</h1><p class="sub">센서 프로토타입 v0.4.0 · 상하 SHAKE / 액체 반응</p>
+  <h1>LOUD JUICE BAR</h1><p class="sub">센서 프로토타입 v0.5.0 · 전축 SHAKE / 액체 반응</p>
   <div class="row"><button id="start">센서 시작</button><button id="reset" class="secondary">RESET</button></div>
   <div id="status" class="status">센서 시작을 눌러 모션 권한을 허용하세요. HTTPS 페이지에서만 센서가 동작합니다.</div>
   <section class="stage" aria-label="흔들림 및 액체 미리보기">
-    <div class="readouts"><span id="mode">READY</span><span>상하축 · Y</span></div>
+    <div class="readouts"><span id="mode">READY</span><span>전축 모션 감지</span></div>
     <div class="shaker" id="shaker"><div class="lid"></div><div class="jar"><div class="juice" id="juice"><div class="bubbles"></div></div></div></div>
     <div class="big"><div class="label">SHAKE</div><div class="count"><span id="count">0</span> <small>회</small></div></div>
   </section>
   <div class="metrics"><div class="metric"><span>감지 가속도</span><b id="peakRead">0.0 m/s²</b></div><div class="metric"><span>센서 주기</span><b id="rateRead">—</b></div><div class="metric"><span>왕복 판정</span><b>1회당 1카운트</b></div></div>
   <details open><summary>센서 튜닝</summary>
     <div class="controls">
-      <label for="threshold">SHAKE 최소 상하 가속도</label><output id="thresholdOut">5.5</output><input id="threshold" type="range" min="3" max="16" step="0.5" value="5.5">
+      <label for="threshold">SHAKE 최소 가속도</label><output id="thresholdOut">5.5</output><input id="threshold" type="range" min="3" max="16" step="0.5" value="5.5">
       <label for="cooldown">왕복 최소 간격</label><output id="cooldownOut">300 ms</output><input id="cooldown" type="range" min="180" max="800" step="20" value="300">
     </div>
   </details>
   <div class="row" style="margin-top:12px"><button id="sound" class="secondary">진동: 켬</button></div>
-  <p class="hint">폰을 세로로 들고 위아래로 한 번 왕복하면 1회로 셉니다. 가만히 들고 있을 때는 중력값을 빼서 카운트하지 않습니다.</p>
+  <p class="hint">폰을 원하는 방향으로 흔들어 보세요. X·Y·Z 모든 축의 모션을 감지하고, 흔든 뒤 돌아오는 한 왕복을 1회로 셉니다. 가만히 들고 있을 때의 중력은 계산에서 뺍니다.</p>
   <pre class="log" id="log">센서 로그가 여기에 표시됩니다.</pre>
 </main>
 <script>
@@ -77,15 +77,16 @@
       gravity.x+=alpha*(ag.x-gravity.x);gravity.y+=alpha*(ag.y-gravity.y);gravity.z+=alpha*(ag.z-gravity.z);
       ax=ag.x-gravity.x;ay=ag.y-gravity.y;az=ag.z-gravity.z;
     }else return;
-    // Portrait device Y follows the phone's top-to-bottom axis.
-    const shakeAxis=ay, magnitude=Math.abs(shakeAxis);
+    // Combine all three linear acceleration axes so any natural shake direction counts.
+    const magnitude=Math.hypot(ax,ay,az);
+    const directionAxis=Math.abs(ax)>=Math.abs(ay)&&Math.abs(ax)>=Math.abs(az)?ax:(Math.abs(ay)>=Math.abs(az)?ay:az);
     if(lastMotionAt){sampleIntervals.push(now-lastMotionAt);sampleIntervals=sampleIntervals.slice(-12);}
     lastMotionAt=now;lastEventAt=now;lastPeak=Math.max(magnitude,lastPeak*.9);
     if(cycleDirection && now-cycleStartedAt>1200){cycleDirection=0;cyclePhase=0;cycleStartedAt=0;}
     if(magnitude<cfg.threshold*.4)axisArmed=true;
     if(axisArmed && magnitude>=cfg.threshold){
       axisArmed=false;
-      const direction=Math.sign(shakeAxis);
+      const direction=Math.sign(directionAxis);
       if(direction && !cycleDirection){cycleDirection=direction;cyclePhase=1;cycleStartedAt=now;}
       else if(direction && now-cycleStartedAt>=150 && now-cycleStartedAt<=1200){
         if(cyclePhase===1 && direction===-cycleDirection)cyclePhase=2;
@@ -95,9 +96,9 @@
         }
       }
     }
-    const visual=Math.max(-12,Math.min(12,-shakeAxis*.8));
+    const visual=Math.max(-12,Math.min(12,-ax*.8));
     juice.style.setProperty('--slosh-x',visual.toFixed(1)+'px');
-    juice.style.setProperty('--slosh-r',Math.max(-9,Math.min(9,-shakeAxis*.55)).toFixed(1)+'deg');
+    juice.style.setProperty('--slosh-r',Math.max(-9,Math.min(9,-directionAxis*.35)).toFixed(1)+'deg');
   }
   async function requestSensors(){
     try{
@@ -107,7 +108,7 @@
       if(perms.some(p=>p!=='granted')) throw new Error('센서 권한이 거부되었습니다. 브라우저 사이트 설정에서 모션/동작 권한을 허용하세요.');
       if(!('DeviceMotionEvent' in window)) throw new Error('이 브라우저에서 모션 센서를 지원하지 않습니다. Android Chrome을 사용하세요.');
       window.addEventListener('devicemotion',onMotion,{passive:true});
-      enabled=true;start.disabled=true;start.textContent='센서 작동 중';say('센서가 연결됐어요. 폰을 위아래로 왕복해 흔들어 보세요.');$('mode').textContent='READY';log('센서 연결 완료');
+      enabled=true;start.disabled=true;start.textContent='센서 작동 중';say('센서가 연결됐어요. 폰을 편한 방향으로 흔들어 보세요.');$('mode').textContent='READY';log('센서 연결 완료');
     }catch(err){say((location.protocol!=='https:' && location.hostname!=='localhost'?'HTTPS가 필요합니다. ': '')+(err.message||'센서를 시작하지 못했습니다.'));log('오류: '+(err.message||err));}
   }
   start.addEventListener('click',requestSensors);reset.addEventListener('click',resetAll);
