@@ -1,4 +1,4 @@
-<!-- LOUD JUICE BAR sensor prototype v0.6.0 | 2026-10-07 -->
+<!-- LOUD JUICE BAR sensor prototype v0.6.1 | 2026-10-07 -->
 <!doctype html>
 <html lang="ko">
 <head>
@@ -14,7 +14,7 @@
     .status { margin:12px 0; border:1px solid #374151; border-radius:12px; padding:10px 12px; color:#d1d5db; font-size:13px; min-height:42px; }
     .stage { min-height:320px; display:grid; place-items:center; position:relative; overflow:hidden; border-radius:20px; background:linear-gradient(#1b2638,#101722); }
     .readouts { position:absolute; inset:12px 14px auto; display:flex; justify-content:space-between; z-index:2; color:#cbd5e1; font-size:12px; font-variant-numeric:tabular-nums; }
-    .shaker { width:156px; height:244px; position:relative; filter:drop-shadow(0 14px 18px #0008); }
+    .shaker { width:156px; height:244px; position:relative; filter:drop-shadow(0 14px 18px #0008); transform:translate(var(--shake-x,0px),var(--shake-y,0px)) rotate(var(--shake-r,0deg)); transform-origin:50% 80%; will-change:transform; }
     .lid { position:absolute; top:0; left:27px; width:102px; height:21px; border:2px solid #dbeafe88; border-radius:9px 9px 4px 4px; background:#94a3b855; z-index:3; }
     .jar { position:absolute; inset:16px 11px 3px; overflow:hidden; border:3px solid #dbeafe9c; border-top:1px solid #dbeafe55; border-radius:15px 15px 34px 34px; background:linear-gradient(90deg,#ffffff17,#ffffff06 35%,#ffffff12 75%,#ffffff25); }
     .jar:before,.jar:after { content:""; position:absolute; z-index:2; top:18px; bottom:20px; width:5px; border-radius:8px; background:#fff2; } .jar:before{left:12px}.jar:after{right:12px;width:3px;background:#fff3}
@@ -37,7 +37,7 @@
 </head>
 <body>
 <main>
-  <h1>LOUD JUICE BAR</h1><p class="sub">센서 프로토타입 v0.6.0 · 전축 SHAKE / 5층 액체</p>
+  <h1>LOUD JUICE BAR</h1><p class="sub">센서 프로토타입 v0.6.1 · 전축 SHAKE / 5층 액체</p>
   <div class="row"><button id="start">센서 시작</button><button id="reset" class="secondary">RESET</button></div>
   <div id="status" class="status">센서 시작을 눌러 모션 권한을 허용하세요. HTTPS 페이지에서만 센서가 동작합니다.</div>
   <section class="stage" aria-label="흔들림 및 액체 미리보기">
@@ -59,17 +59,18 @@
 <script>
 (() => {
   const $ = id => document.getElementById(id);
-  const start=$('start'), reset=$('reset'), status=$('status'), juice=$('juice');
+  const start=$('start'), reset=$('reset'), status=$('status'), juice=$('juice'), shaker=$('shaker');
   let count=0, enabled=false, haptics=true;
   let lastCountAt=0,lastPeak=0,lastEventAt=0,lastMotionAt=0,sampleIntervals=[];
   let gravity={x:0,y:0,z:0},gravityReady=false,impactArmed=true;
+  let shakeX=0,shakeY=0,shakeR=0,shakeKick=0;
   let lastUi=0,logLines=[];
   const cfg={threshold:+$('threshold').value,cooldown:+$('cooldown').value};
   function say(text){ status.textContent=text; }
   function log(text){ logLines.unshift(new Date().toLocaleTimeString()+"  "+text); logLines=logLines.slice(0,7); $('log').textContent=logLines.join('\n'); }
   function haptic(pattern){ if(haptics && navigator.vibrate) navigator.vibrate(pattern); }
   function setCount(n){count=n;$('count').textContent=n;}
-  function resetAll(){setCount(0);lastCountAt=0;lastPeak=0;lastMotionAt=0;sampleIntervals=[];gravityReady=false;impactArmed=true;lastEventAt=0;juice.classList.remove('mixing');juice.style.setProperty('--mix-blur','0px');juice.style.setProperty('--slosh-x','0px');juice.style.setProperty('--slosh-r','0deg');for(let i=0;i<5;i++){juice.children[i].style.setProperty('--layer-x','0px');juice.children[i].style.setProperty('--layer-r','0deg');} $('mode').textContent=enabled?'READY':'OFFLINE';log('RESET');}
+  function resetAll(){setCount(0);lastCountAt=0;lastPeak=0;lastMotionAt=0;sampleIntervals=[];gravityReady=false;impactArmed=true;lastEventAt=0;shakeX=0;shakeY=0;shakeR=0;shakeKick=0;shaker.style.setProperty('--shake-x','0px');shaker.style.setProperty('--shake-y','0px');shaker.style.setProperty('--shake-r','0deg');juice.classList.remove('mixing');juice.style.setProperty('--mix-blur','0px');juice.style.setProperty('--slosh-x','0px');juice.style.setProperty('--slosh-r','0deg');for(let i=0;i<5;i++){juice.children[i].style.setProperty('--layer-x','0px');juice.children[i].style.setProperty('--layer-r','0deg');} $('mode').textContent=enabled?'READY':'OFFLINE';log('RESET');}
   function onMotion(e){
     const ag=e.accelerationIncludingGravity, linear=e.acceleration;
     if(!ag && !linear)return;
@@ -87,10 +88,14 @@
     const magnitude=Math.hypot(ax,ay,az);
     if(lastMotionAt){sampleIntervals.push(now-lastMotionAt);sampleIntervals=sampleIntervals.slice(-12);}
     lastMotionAt=now;lastEventAt=now;lastPeak=Math.max(magnitude,lastPeak*.9);
+    // Map handset linear acceleration to the shaker's visible position and tilt.
+    shakeX=Math.max(-22,Math.min(22,shakeX*.55-ax*1.05));
+    shakeY=Math.max(-14,Math.min(14,shakeY*.55+ay*.45));
+    shakeR=Math.max(-13,Math.min(13,shakeR*.55+(-ay-az)*.42));
     if(magnitude<cfg.threshold*.55)impactArmed=true;
     if(impactArmed && magnitude>=cfg.threshold){
       impactArmed=false;
-      if(!lastCountAt || now-lastCountAt>=cfg.cooldown){setCount(count+1);$('mode').textContent='SHAKE';lastCountAt=now;haptic(18);const mix=Math.min(1,count/30);juice.classList.toggle('mixing',mix>0);juice.style.setProperty('--mix-blur',(mix*3).toFixed(1)+'px');log(`SHAKE ${count} · 피크 ${magnitude.toFixed(1)} m/s²`);}
+      if(!lastCountAt || now-lastCountAt>=cfg.cooldown){setCount(count+1);$('mode').textContent='SHAKE';lastCountAt=now;shakeKick=Math.min(1,magnitude/24);haptic(18);const mix=Math.min(1,count/30);juice.classList.toggle('mixing',mix>0);juice.style.setProperty('--mix-blur',(mix*3).toFixed(1)+'px');log(`SHAKE ${count} · 피크 ${magnitude.toFixed(1)} m/s²`);}
     }
     const visualX=Math.max(-14,Math.min(14,-ax*1.4));
     const visualR=Math.max(-10,Math.min(10,(-ay-az)*.34));
@@ -119,6 +124,10 @@
     ['threshold','threshold','thresholdOut',v=>Number(v).toFixed(1)],['cooldown','cooldown','cooldownOut',v=>v+' ms']
   ]) $(id).addEventListener('input',e=>{cfg[key]=+e.target.value;$(out).textContent=format(e.target.value);});
   function frame(now){
+    shakeX*=.78;shakeY*=.78;shakeR*=.76;shakeKick*=.88;
+    shaker.style.setProperty('--shake-x',shakeX.toFixed(1)+'px');
+    shaker.style.setProperty('--shake-y',shakeY.toFixed(1)+'px');
+    shaker.style.setProperty('--shake-r',(shakeR+Math.sin(now*.045)*shakeKick*5).toFixed(2)+'deg');
     if(now-lastEventAt>130){juice.style.setProperty('--slosh-x','0px');juice.style.setProperty('--slosh-r','0deg');for(let i=0;i<5;i++){juice.children[i].style.setProperty('--layer-x','0px');juice.children[i].style.setProperty('--layer-r','0deg');}}
     if(now-lastUi>250){$('peakRead').textContent=lastPeak.toFixed(1)+' m/s²';lastPeak*=.65;
       if(sampleIntervals.length){const avg=sampleIntervals.reduce((a,b)=>a+b,0)/sampleIntervals.length;$('rateRead').textContent=Math.round(1000/avg)+' Hz';}lastUi=now;}
