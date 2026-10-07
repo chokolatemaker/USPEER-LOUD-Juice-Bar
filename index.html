@@ -1,4 +1,3 @@
-<!-- LOUD JUICE BAR sensor prototype v0.6.1 | 2026-10-07 -->
 <!doctype html>
 <html lang="ko">
 <head>
@@ -14,63 +13,66 @@
     .status { margin:12px 0; border:1px solid #374151; border-radius:12px; padding:10px 12px; color:#d1d5db; font-size:13px; min-height:42px; }
     .stage { min-height:320px; display:grid; place-items:center; position:relative; overflow:hidden; border-radius:20px; background:linear-gradient(#1b2638,#101722); }
     .readouts { position:absolute; inset:12px 14px auto; display:flex; justify-content:space-between; z-index:2; color:#cbd5e1; font-size:12px; font-variant-numeric:tabular-nums; }
-    .shaker { width:156px; height:244px; position:relative; filter:drop-shadow(0 14px 18px #0008); transform:translate(var(--shake-x,0px),var(--shake-y,0px)) rotate(var(--shake-r,0deg)); transform-origin:50% 80%; will-change:transform; }
+    .shaker { width:156px; height:244px; position:relative; transform:rotate(var(--tilt,0deg)); transition:transform 80ms linear; filter:drop-shadow(0 14px 18px #0008); }
     .lid { position:absolute; top:0; left:27px; width:102px; height:21px; border:2px solid #dbeafe88; border-radius:9px 9px 4px 4px; background:#94a3b855; z-index:3; }
     .jar { position:absolute; inset:16px 11px 3px; overflow:hidden; border:3px solid #dbeafe9c; border-top:1px solid #dbeafe55; border-radius:15px 15px 34px 34px; background:linear-gradient(90deg,#ffffff17,#ffffff06 35%,#ffffff12 75%,#ffffff25); }
     .jar:before,.jar:after { content:""; position:absolute; z-index:2; top:18px; bottom:20px; width:5px; border-radius:8px; background:#fff2; } .jar:before{left:12px}.jar:after{right:12px;width:3px;background:#fff3}
-    .juice { position:absolute; left:-16%; right:-16%; bottom:0; height:70%; overflow:hidden; border-top:3px solid #f8fafc; border-radius:48% 48% 0 0 / 9% 9% 0 0; transform:translateX(var(--slosh-x,0px)) rotate(var(--slosh-r,0deg)); transform-origin:50% 100%; transition:transform .1s ease-out; }
-    .layer { position:absolute; left:-4%; right:-4%; height:20%; border-radius:50% 50% 0 0 / 12% 12% 0 0; transform:translateX(var(--layer-x,0px)) rotate(var(--layer-r,0deg)); transition:filter .35s ease,background-color .35s ease; }
-    .layer:nth-child(1) { bottom:80%; background:#ef4444; }
-    .layer:nth-child(2) { bottom:60%; background:#f97316; }
-    .layer:nth-child(3) { bottom:40%; background:#dc2626; }
-    .layer:nth-child(4) { bottom:20%; background:#22c55e; }
-    .layer:nth-child(5) { bottom:0; background:#f8fafc; }
-    .juice.mixing .layer { filter:blur(var(--mix-blur,0px)); }
-    .juice:after { content:""; position:absolute; left:-10%; top:-13px; width:120%; height:26px; border-radius:50%; background:#ffffffa8; }
+    .juice { position:absolute; left:-16%; right:-16%; bottom:0; height:70%; overflow:hidden; background:linear-gradient(180deg,#7dd3fcdd,#0ea5e9ed 38%,#075985ed); border-top:3px solid #bae6fd; border-radius:48% 48% 0 0 / 9% 9% 0 0; transform:translateX(var(--slosh-x,0px)) rotate(var(--slosh-r,0deg)); transform-origin:50% 100%; transition:height .2s ease-out,transform .1s ease-out; }
+    .juice:before { content:""; position:absolute; left:-10%; top:-13px; width:120%; height:26px; border-radius:50%; background:#e0f2fea8; }
+    .bubbles { position:absolute; inset:0; opacity:.55; background:radial-gradient(circle at 28% 68%,#fff9 0 2px,transparent 3px),radial-gradient(circle at 72% 49%,#fff8 0 3px,transparent 4px),radial-gradient(circle at 48% 82%,#fff8 0 2px,transparent 3px); }
     .big { text-align:center; } .big .label { color:var(--muted); font-size:12px; letter-spacing:.14em; } .count { font-size:54px; font-weight:900; line-height:1.05; font-variant-numeric:tabular-nums; } .count small { font-size:15px; color:#cbd5e1; letter-spacing:.08em; }
     .metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; } .metric { padding:10px; border-radius:12px; background:#ffffff0b; text-align:center; } .metric span { display:block; color:var(--muted); font-size:11px; } .metric b { font-size:14px; font-variant-numeric:tabular-nums; }
     details { margin-top:13px; background:#ffffff08; border-radius:12px; padding:11px 13px; } summary { cursor:pointer; font-weight:700; font-size:14px; } .controls { display:grid; grid-template-columns:1fr auto; gap:9px 12px; align-items:center; margin-top:12px; font-size:13px; color:#d1d5db; } input[type=range] { width:100%; accent-color:var(--lime); } output { min-width:47px; text-align:right; color:var(--lime); font-variant-numeric:tabular-nums; }
     .log { margin-top:12px; padding:10px; min-height:56px; max-height:110px; overflow:auto; border-radius:10px; background:#0003; color:#9ca3af; font:11px/1.5 ui-monospace,monospace; white-space:pre-wrap; }
     .hint { color:#9ca3af; font-size:12px; margin:12px 2px; }
-    @media (max-height:730px) { .stage{min-height:260px}.shaker{transform:scale(.9)} }
+    @media (max-height:730px) { .stage{min-height:280px}.shaker{transform:scale(.9) rotate(var(--tilt,0deg))}.stage{min-height:260px} }
   </style>
 </head>
 <body>
 <main>
-  <h1>LOUD JUICE BAR</h1><p class="sub">센서 프로토타입 v0.6.1 · 전축 SHAKE / 5층 액체</p>
+  <h1>LOUD JUICE BAR</h1><p class="sub">센서 프로토타입 · SHAKE / 액체 반응 / POUR</p>
   <div class="row"><button id="start">센서 시작</button><button id="reset" class="secondary">RESET</button></div>
-  <div id="status" class="status">센서 시작을 눌러 모션 권한을 허용하세요. HTTPS 페이지에서만 센서가 동작합니다.</div>
+  <div id="status" class="status">센서 시작을 눌러 모션·기울기 권한을 허용하세요. HTTPS 페이지에서만 센서가 동작합니다.</div>
   <section class="stage" aria-label="흔들림 및 액체 미리보기">
-    <div class="readouts"><span id="mode">READY</span><span>전축 모션 감지</span></div>
-    <div class="shaker" id="shaker"><div class="lid"></div><div class="jar"><div class="juice" id="juice"><div class="layer"></div><div class="layer"></div><div class="layer"></div><div class="layer"></div><div class="layer"></div></div></div></div>
+    <div class="readouts"><span id="mode">READY</span><span id="tiltRead">기울기 0°</span></div>
+    <div class="shaker" id="shaker" style="--tilt:0deg"><div class="lid"></div><div class="jar"><div class="juice" id="juice"><div class="bubbles"></div></div></div></div>
     <div class="big"><div class="label">SHAKE</div><div class="count"><span id="count">0</span> <small>회</small></div></div>
   </section>
-  <div class="metrics"><div class="metric"><span>감지 가속도</span><b id="peakRead">0.0 m/s²</b></div><div class="metric"><span>센서 주기</span><b id="rateRead">—</b></div><div class="metric"><span>감지 기준</span><b>피크 1회 = +1</b></div></div>
+  <div class="metrics"><div class="metric"><span>액체</span><b id="fillRead">100%</b></div><div class="metric"><span>흔들기 감지</span><b id="peakRead">0.0 m/s²</b></div><div class="metric"><span>센서 주기</span><b id="rateRead">—</b></div></div>
   <details open><summary>센서 튜닝</summary>
     <div class="controls">
-      <label for="threshold">SHAKE 최소 가속도</label><output id="thresholdOut">11.0</output><input id="threshold" type="range" min="3" max="16" step="0.5" value="11">
-      <label for="cooldown">재감지 최소 간격</label><output id="cooldownOut">300 ms</output><input id="cooldown" type="range" min="180" max="800" step="20" value="300">
+      <label for="threshold">SHAKE 최소 가속도</label><output id="thresholdOut">3.5</output><input id="threshold" type="range" min="1" max="16" step="0.5" value="3.5">
+      <label for="cooldown">카운트 쿨다운</label><output id="cooldownOut">280 ms</output><input id="cooldown" type="range" min="140" max="700" step="20" value="280">
+      <label for="tiltThreshold">POUR 시작 각도</label><output id="tiltThresholdOut">-10°</output><input id="tiltThreshold" type="range" min="-50" max="20" step="1" value="-10">
+      <label for="pourRate">기울였을 때 비우는 속도</label><output id="pourRateOut">32%/초</output><input id="pourRate" type="range" min="10" max="80" step="2" value="32">
     </div>
   </details>
-  <div class="row" style="margin-top:12px"><button id="sound" class="secondary">진동: 켬</button></div>
-  <p class="hint">빨강·주황·빨강·초록·흰색 5개 재료 층으로 시작합니다. 폰을 흔들면 액체가 찰랑이고, SHAKE 카운트에 따라 층이 조금씩 섞입니다.</p>
+  <div class="row" style="margin-top:12px"><button id="pourToggle" class="secondary" style="flex:1">POUR 테스트: 켬</button><button id="sound" class="secondary">진동: 켬</button></div>
+  <p class="hint">센서 시작 후 처음 잡힌 세로 자세가 0°입니다. 폰 윗부분을 아래로 더 숙이면 음수 각도가 되고, -10° 이하에서 POUR가 시작됩니다. SHAKE는 중력 성분을 뺀 가속도 피크를 셉니다.</p>
   <pre class="log" id="log">센서 로그가 여기에 표시됩니다.</pre>
 </main>
 <script>
 (() => {
   const $ = id => document.getElementById(id);
   const start=$('start'), reset=$('reset'), status=$('status'), juice=$('juice'), shaker=$('shaker');
-  let count=0, enabled=false, haptics=true;
+  let count=0, fill=100, enabled=false, pourEnabled=true, haptics=true;
   let lastCountAt=0,lastPeak=0,lastEventAt=0,lastMotionAt=0,sampleIntervals=[];
-  let gravity={x:0,y:0,z:0},gravityReady=false,impactArmed=true;
-  let shakeX=0,shakeY=0,shakeR=0,shakeKick=0;
-  let lastUi=0,logLines=[];
-  const cfg={threshold:+$('threshold').value,cooldown:+$('cooldown').value};
+  let gravity={x:0,y:0,z:0},gravityReady=false,shakeArmed=true,prevAxis=0;
+  let tilt=0, previousFrame=performance.now(), lastUi=0, logLines=[];
+  const cfg={threshold:+$('threshold').value,cooldown:+$('cooldown').value,tiltThreshold:+$('tiltThreshold').value,pourRate:+$('pourRate').value};
   function say(text){ status.textContent=text; }
   function log(text){ logLines.unshift(new Date().toLocaleTimeString()+"  "+text); logLines=logLines.slice(0,7); $('log').textContent=logLines.join('\n'); }
   function haptic(pattern){ if(haptics && navigator.vibrate) navigator.vibrate(pattern); }
   function setCount(n){count=n;$('count').textContent=n;}
-  function resetAll(){setCount(0);lastCountAt=0;lastPeak=0;lastMotionAt=0;sampleIntervals=[];gravityReady=false;impactArmed=true;lastEventAt=0;shakeX=0;shakeY=0;shakeR=0;shakeKick=0;shaker.style.setProperty('--shake-x','0px');shaker.style.setProperty('--shake-y','0px');shaker.style.setProperty('--shake-r','0deg');juice.classList.remove('mixing');juice.style.setProperty('--mix-blur','0px');juice.style.setProperty('--slosh-x','0px');juice.style.setProperty('--slosh-r','0deg');for(let i=0;i<5;i++){juice.children[i].style.setProperty('--layer-x','0px');juice.children[i].style.setProperty('--layer-r','0deg');} $('mode').textContent=enabled?'READY':'OFFLINE';log('RESET');}
+  function updateFill(){ $('fillRead').textContent=Math.round(fill)+'%'; juice.style.height=fill+'%'; if(fill<=0)$('mode').textContent='EMPTY'; }
+  function resetAll(){setCount(0);fill=100;lastCountAt=0;lastPeak=0;lastMotionAt=0;sampleIntervals=[];gravityReady=false;shakeArmed=true;prevAxis=0;lastEventAt=0;orientationBase=null;tilt=0;shaker.style.setProperty('--tilt','0deg');$('tiltRead').textContent='기울기 0°';juice.style.setProperty('--slosh-x','0px');juice.style.setProperty('--slosh-r','0deg');$('mode').textContent=enabled?'READY':'OFFLINE';updateFill();log('RESET · 기준 자세 다시 잡기');}
+  function axisFor(e){
+    // Portrait use: screen-horizontal is phone Y; adapt to landscape using screen orientation.
+    const angle=((screen.orientation&&screen.orientation.angle)||window.orientation||0)%360;
+    if(angle===90 || angle===-270) return e.accelerationIncludingGravity.x;
+    if(angle===270 || angle===-90) return -e.accelerationIncludingGravity.x;
+    return e.accelerationIncludingGravity.y;
+  }
   function onMotion(e){
     const ag=e.accelerationIncludingGravity, linear=e.acceleration;
     if(!ag && !linear)return;
@@ -84,51 +86,54 @@
       gravity.x+=alpha*(ag.x-gravity.x);gravity.y+=alpha*(ag.y-gravity.y);gravity.z+=alpha*(ag.z-gravity.z);
       ax=ag.x-gravity.x;ay=ag.y-gravity.y;az=ag.z-gravity.z;
     }else return;
-    // Combine all three linear acceleration axes so any natural shake direction counts.
-    const magnitude=Math.hypot(ax,ay,az);
+    const magnitude=Math.hypot(ax,ay,az), angle=((screen.orientation&&screen.orientation.angle)||window.orientation||0)%360;
+    const axis=(angle===90||angle===-270)?ax:(angle===270||angle===-90)?-ax:ay;
+    const delta=axis-prevAxis;
     if(lastMotionAt){sampleIntervals.push(now-lastMotionAt);sampleIntervals=sampleIntervals.slice(-12);}
-    lastMotionAt=now;lastEventAt=now;lastPeak=Math.max(magnitude,lastPeak*.9);
-    // Map handset linear acceleration to the shaker's visible position and tilt.
-    shakeX=Math.max(-22,Math.min(22,shakeX*.55-ax*1.05));
-    shakeY=Math.max(-14,Math.min(14,shakeY*.55+ay*.45));
-    shakeR=Math.max(-13,Math.min(13,shakeR*.55+(-ay-az)*.42));
-    if(magnitude<cfg.threshold*.55)impactArmed=true;
-    if(impactArmed && magnitude>=cfg.threshold){
-      impactArmed=false;
-      if(!lastCountAt || now-lastCountAt>=cfg.cooldown){setCount(count+1);$('mode').textContent='SHAKE';lastCountAt=now;shakeKick=Math.min(1,magnitude/24);haptic(18);const mix=Math.min(1,count/30);juice.classList.toggle('mixing',mix>0);juice.style.setProperty('--mix-blur',(mix*3).toFixed(1)+'px');log(`SHAKE ${count} · 피크 ${magnitude.toFixed(1)} m/s²`);}
+    lastMotionAt=now;prevAxis=axis;lastEventAt=now;lastPeak=Math.max(magnitude,lastPeak*.9);
+    if(magnitude<cfg.threshold*.55)shakeArmed=true;
+    if(shakeArmed && magnitude>=cfg.threshold && (!lastCountAt || now-lastCountAt>=cfg.cooldown)){
+      setCount(count+1);lastCountAt=now;shakeArmed=false;haptic(18);log(`SHAKE ${count} · 피크 ${magnitude.toFixed(1)} m/s²`);
     }
-    const visualX=Math.max(-14,Math.min(14,-ax*1.4));
-    const visualR=Math.max(-10,Math.min(10,(-ay-az)*.34));
-    juice.style.setProperty('--slosh-x',visualX.toFixed(1)+'px');
-    juice.style.setProperty('--slosh-r',visualR.toFixed(1)+'deg');
-    for(let i=0;i<5;i++){
-      const phase=i%2===0?1:-1;
-      juice.children[i].style.setProperty('--layer-x',(visualX*phase*.48).toFixed(1)+'px');
-      juice.children[i].style.setProperty('--layer-r',(visualR*phase*.65).toFixed(1)+'deg');
-    }
+    const visual=Math.max(-22,Math.min(22,-axis*1.8));
+    juice.style.setProperty('--slosh-x',visual.toFixed(1)+'px');
+    juice.style.setProperty('--slosh-r',Math.max(-12,Math.min(12,-delta*.28)).toFixed(1)+'deg');
+  }
+  function onOrientation(e){
+    if(e.beta==null)return;
+    // The upright pose at sensor start is 0°. Top-down tilt is negative by definition.
+    if(orientationBase===null) orientationBase=e.beta;
+    let relative=e.beta-orientationBase;
+    if(relative>180)relative-=360;if(relative<-180)relative+=360;
+    tilt=Math.max(-90,Math.min(90,-relative));
+    shaker.style.setProperty('--tilt',Math.max(-45,Math.min(45,tilt*.45)).toFixed(1)+'deg');
+    $('tiltRead').textContent=`기울기 ${Math.round(tilt)}°`;
+    if(pourEnabled && tilt<=cfg.tiltThreshold && fill>0){$('mode').textContent='POUR';}
+    else if(fill>0 && enabled){$('mode').textContent=count?'SHAKE':'READY';}
   }
   async function requestSensors(){
     try{
       const requests=[];
       if(typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function') requests.push(DeviceMotionEvent.requestPermission());
+      if(typeof DeviceOrientationEvent!=='undefined' && typeof DeviceOrientationEvent.requestPermission==='function') requests.push(DeviceOrientationEvent.requestPermission());
       const perms=await Promise.all(requests);
       if(perms.some(p=>p!=='granted')) throw new Error('센서 권한이 거부되었습니다. 브라우저 사이트 설정에서 모션/동작 권한을 허용하세요.');
-      if(!('DeviceMotionEvent' in window)) throw new Error('이 브라우저에서 모션 센서를 지원하지 않습니다. Android Chrome을 사용하세요.');
-      window.addEventListener('devicemotion',onMotion,{passive:true});
-      enabled=true;start.disabled=true;start.textContent='센서 작동 중';say('센서가 연결됐어요. 폰을 편한 방향으로 흔들어 보세요.');$('mode').textContent='READY';log('센서 연결 완료');
+      if(!('DeviceMotionEvent' in window) || !('DeviceOrientationEvent' in window)) throw new Error('이 브라우저에서 필요한 모션 센서를 지원하지 않습니다. Android Chrome을 사용하세요.');
+      window.addEventListener('devicemotion',onMotion,{passive:true});window.addEventListener('deviceorientation',onOrientation,{passive:true});
+      enabled=true;start.disabled=true;start.textContent='센서 작동 중';say('센서가 연결됐어요. 폰을 좌우로 흔들고, 윗부분을 아래로 기울여 보세요.');$('mode').textContent='READY';log('센서 연결 완료');
     }catch(err){say((location.protocol!=='https:' && location.hostname!=='localhost'?'HTTPS가 필요합니다. ': '')+(err.message||'센서를 시작하지 못했습니다.'));log('오류: '+(err.message||err));}
   }
   start.addEventListener('click',requestSensors);reset.addEventListener('click',resetAll);
+  $('pourToggle').addEventListener('click',()=>{pourEnabled=!pourEnabled;$('pourToggle').textContent='POUR 테스트: '+(pourEnabled?'켬':'끔');});
   $('sound').addEventListener('click',()=>{haptics=!haptics;$('sound').textContent='진동: '+(haptics?'켬':'끔');if(haptics)haptic(20);});
   for(const [id,key,out,format] of [
-    ['threshold','threshold','thresholdOut',v=>Number(v).toFixed(1)],['cooldown','cooldown','cooldownOut',v=>v+' ms']
+    ['threshold','threshold','thresholdOut',v=>Number(v).toFixed(1)],['cooldown','cooldown','cooldownOut',v=>v+' ms'],
+    ['tiltThreshold','tiltThreshold','tiltThresholdOut',v=>v+'°'],['pourRate','pourRate','pourRateOut',v=>v+'%/초']
   ]) $(id).addEventListener('input',e=>{cfg[key]=+e.target.value;$(out).textContent=format(e.target.value);});
   function frame(now){
-    shakeX*=.78;shakeY*=.78;shakeR*=.76;shakeKick*=.88;
-    shaker.style.setProperty('--shake-x',shakeX.toFixed(1)+'px');
-    shaker.style.setProperty('--shake-y',shakeY.toFixed(1)+'px');
-    shaker.style.setProperty('--shake-r',(shakeR+Math.sin(now*.045)*shakeKick*5).toFixed(2)+'deg');
-    if(now-lastEventAt>130){juice.style.setProperty('--slosh-x','0px');juice.style.setProperty('--slosh-r','0deg');for(let i=0;i<5;i++){juice.children[i].style.setProperty('--layer-x','0px');juice.children[i].style.setProperty('--layer-r','0deg');}}
+    const dt=Math.min(.05,(now-previousFrame)/1000);previousFrame=now;
+    if(pourEnabled && tilt<=cfg.tiltThreshold && fill>0){fill=Math.max(0,fill-cfg.pourRate*dt);updateFill();}
+    if(now-lastEventAt>130){juice.style.setProperty('--slosh-x','0px');juice.style.setProperty('--slosh-r','0deg');}
     if(now-lastUi>250){$('peakRead').textContent=lastPeak.toFixed(1)+' m/s²';lastPeak*=.65;
       if(sampleIntervals.length){const avg=sampleIntervals.reduce((a,b)=>a+b,0)/sampleIntervals.length;$('rateRead').textContent=Math.round(1000/avg)+' Hz';}lastUi=now;}
     requestAnimationFrame(frame);
