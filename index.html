@@ -1,4 +1,4 @@
-<!-- LOUD JUICE BAR sensor prototype v0.6.2 | 2026-10-07 -->
+<!-- LOUD JUICE BAR sensor prototype v0.6.3 | 2026-10-07 -->
 <!doctype html>
 <html lang="ko">
 <head>
@@ -19,13 +19,21 @@
     .jar { position:absolute; inset:16px 11px 3px; overflow:hidden; border:3px solid #dbeafe9c; border-top:1px solid #dbeafe55; border-radius:15px 15px 34px 34px; background:linear-gradient(90deg,#ffffff17,#ffffff06 35%,#ffffff12 75%,#ffffff25); }
     .jar:before,.jar:after { content:""; position:absolute; z-index:2; top:18px; bottom:20px; width:5px; border-radius:8px; background:#fff2; } .jar:before{left:12px}.jar:after{right:12px;width:3px;background:#fff3}
     .juice { position:absolute; left:-16%; right:-16%; bottom:0; height:70%; overflow:hidden; border-top:3px solid #f8fafc; border-radius:48% 48% 0 0 / 9% 9% 0 0; transform:translateX(var(--slosh-x,0px)) rotate(var(--slosh-r,0deg)); transform-origin:50% 100%; transition:transform .1s ease-out; }
-    .layer { position:absolute; left:-4%; right:-4%; height:20%; border-radius:50% 50% 0 0 / 12% 12% 0 0; transform:translateX(var(--layer-x,0px)) rotate(var(--layer-r,0deg)); transition:filter .35s ease,background-color .35s ease; }
+    .layer { position:absolute; left:-4%; right:-4%; height:20%; border-radius:50% 50% 0 0 / 12% 12% 0 0; transform:translateX(var(--layer-x,0px)) rotate(var(--layer-r,0deg)); transition:filter .35s ease,background-color .35s ease,height .25s ease,bottom .25s ease; }
     .layer:nth-child(1) { bottom:80%; background:#ef4444; }
     .layer:nth-child(2) { bottom:60%; background:#f97316; }
     .layer:nth-child(3) { bottom:40%; background:#dc2626; }
     .layer:nth-child(4) { bottom:20%; background:#22c55e; }
     .layer:nth-child(5) { bottom:0; background:#f8fafc; }
     .juice.mixing .layer { filter:blur(var(--mix-blur,0px)); }
+    .juice.is-mixing .layer { height:var(--layer-height,20%); bottom:var(--layer-bottom,0%); border-radius:var(--layer-radius,50% 50% 0 0 / 12% 12% 0 0); }
+    .juice.is-mixing .layer:nth-child(1) { --layer-height:25%; --layer-bottom:75%; --layer-radius:45% 55% 0 0 / 18% 12% 0 0; }
+    .juice.is-mixing .layer:nth-child(2) { --layer-height:27%; --layer-bottom:57%; --layer-radius:55% 45% 0 0 / 12% 18% 0 0; }
+    .juice.is-mixing .layer:nth-child(3) { --layer-height:25%; --layer-bottom:38%; --layer-radius:43% 57% 0 0 / 17% 12% 0 0; }
+    .juice.is-mixing .layer:nth-child(4) { --layer-height:28%; --layer-bottom:17%; --layer-radius:56% 44% 0 0 / 12% 18% 0 0; }
+    .juice.is-mixing .layer:nth-child(5) { --layer-height:24%; --layer-bottom:0%; --layer-radius:48% 52% 0 0 / 16% 12% 0 0; }
+    .juice.swirling .layer { animation:liquid-swirl .42s ease-in-out; }
+    @keyframes liquid-swirl { 0%{margin-left:0} 30%{margin-left:5%} 65%{margin-left:-4%} 100%{margin-left:0} }
     .juice:after { content:""; position:absolute; left:-10%; top:-13px; width:120%; height:26px; border-radius:50%; background:#ffffffa8; }
     .big { text-align:center; } .big .label { color:var(--muted); font-size:12px; letter-spacing:.14em; } .count { font-size:54px; font-weight:900; line-height:1.05; font-variant-numeric:tabular-nums; } .count small { font-size:15px; color:#cbd5e1; letter-spacing:.08em; }
     .metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; } .metric { padding:10px; border-radius:12px; background:#ffffff0b; text-align:center; } .metric span { display:block; color:var(--muted); font-size:11px; } .metric b { font-size:14px; font-variant-numeric:tabular-nums; }
@@ -37,7 +45,7 @@
 </head>
 <body>
 <main>
-  <h1>LOUD JUICE BAR</h1><p class="sub">센서 프로토타입 v0.6.2 · 전축 SHAKE / 5층 액체</p>
+  <h1>LOUD JUICE BAR</h1><p class="sub">센서 프로토타입 v0.6.3 · 전축 SHAKE / 5층 액체</p>
   <div class="row"><button id="start">센서 시작</button><button id="reset" class="secondary">RESET</button></div>
   <div id="status" class="status">센서 시작을 눌러 모션 권한을 허용하세요. HTTPS 페이지에서만 센서가 동작합니다.</div>
   <section class="stage" aria-label="흔들림 및 액체 미리보기">
@@ -53,7 +61,7 @@
     </div>
   </details>
   <div class="row" style="margin-top:12px"><button id="sound" class="secondary">진동: 켬</button></div>
-  <p class="hint">빨강·주황·빨강·초록·흰색 5개 재료 층으로 시작합니다. 폰을 흔들면 병이 함께 움직이고, 액체가 찰랑이며 SHAKE 카운트에 따라 층이 조금씩 섞입니다.</p>
+  <p class="hint">빨강·주황·빨강·초록·흰색 5개 재료 층으로 시작합니다. 폰을 흔들면 병이 함께 움직이고, 액체가 찰랑이며 SHAKE 카운트에 따라 층이 흔들릴 때마다 번지고 점점 섞입니다.</p>
   <pre class="log" id="log">센서 로그가 여기에 표시됩니다.</pre>
 </main>
 <script>
@@ -70,7 +78,7 @@
   function log(text){ logLines.unshift(new Date().toLocaleTimeString()+"  "+text); logLines=logLines.slice(0,7); $('log').textContent=logLines.join('\n'); }
   function haptic(pattern){ if(haptics && navigator.vibrate) navigator.vibrate(pattern); }
   function setCount(n){count=n;$('count').textContent=n;}
-  function resetAll(){setCount(0);lastCountAt=0;lastPeak=0;lastMotionAt=0;sampleIntervals=[];gravityReady=false;impactArmed=true;lastEventAt=0;shakeX=0;shakeY=0;shakeR=0;shakeKick=0;shaker.style.setProperty('--shake-x','0px');shaker.style.setProperty('--shake-y','0px');shaker.style.setProperty('--shake-r','0deg');juice.classList.remove('mixing');juice.style.setProperty('--mix-blur','0px');juice.style.setProperty('--slosh-x','0px');juice.style.setProperty('--slosh-r','0deg');for(let i=0;i<5;i++){juice.children[i].style.setProperty('--layer-x','0px');juice.children[i].style.setProperty('--layer-r','0deg');} $('mode').textContent=enabled?'READY':'OFFLINE';log('RESET');}
+  function resetAll(){setCount(0);lastCountAt=0;lastPeak=0;lastMotionAt=0;sampleIntervals=[];gravityReady=false;impactArmed=true;lastEventAt=0;shakeX=0;shakeY=0;shakeR=0;shakeKick=0;shaker.style.setProperty('--shake-x','0px');shaker.style.setProperty('--shake-y','0px');shaker.style.setProperty('--shake-r','0deg');juice.classList.remove('mixing','is-mixing','swirling');juice.style.setProperty('--mix-blur','0px');juice.style.setProperty('--slosh-x','0px');juice.style.setProperty('--slosh-r','0deg');for(let i=0;i<5;i++){juice.children[i].style.setProperty('--layer-x','0px');juice.children[i].style.setProperty('--layer-r','0deg');} $('mode').textContent=enabled?'READY':'OFFLINE';log('RESET');}
   function onMotion(e){
     const ag=e.accelerationIncludingGravity, linear=e.acceleration;
     if(!ag && !linear)return;
@@ -95,7 +103,7 @@
     if(magnitude<cfg.threshold*.55)impactArmed=true;
     if(impactArmed && magnitude>=cfg.threshold){
       impactArmed=false;
-      if(!lastCountAt || now-lastCountAt>=cfg.cooldown){setCount(count+1);$('mode').textContent='SHAKE';lastCountAt=now;shakeKick=Math.min(1,magnitude/24);haptic(18);const mix=Math.min(1,count/30);juice.classList.toggle('mixing',mix>0);juice.style.setProperty('--mix-blur',(mix*3).toFixed(1)+'px');log(`SHAKE ${count} · 피크 ${magnitude.toFixed(1)} m/s²`);}
+      if(!lastCountAt || now-lastCountAt>=cfg.cooldown){setCount(count+1);$('mode').textContent='SHAKE';lastCountAt=now;shakeKick=Math.min(1,magnitude/24);haptic(18);const mix=Math.min(1,count/30);juice.classList.add('mixing','is-mixing');juice.style.setProperty('--mix-blur',(mix*1.2).toFixed(1)+'px');juice.classList.remove('swirling');void juice.offsetWidth;juice.classList.add('swirling');setTimeout(()=>juice.classList.remove('swirling'),450);log(`SHAKE ${count} · 피크 ${magnitude.toFixed(1)} m/s²`);}
     }
     const visualX=Math.max(-14,Math.min(14,-ax*1.4));
     const visualR=Math.max(-10,Math.min(10,(-ay-az)*.34));
